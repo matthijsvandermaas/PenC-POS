@@ -1,16 +1,31 @@
 package com.example.SpringBooth.POS;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "order_items")
 public class OrderItem {
 
-    private int productId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    private Integer productId;
     private int quantity;
 
-    public OrderItem(int productId, int quantity) {
+    public OrderItem() {
+    }
+
+    public OrderItem(Integer productId, int quantity) {
         this.productId = productId;
         this.quantity = quantity;
     }
 
-    public int getProductId() {
+    public Integer getId() {
+        return id;
+    }
+
+    public Integer getProductId() {
         return productId;
     }
 

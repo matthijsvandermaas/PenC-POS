@@ -1,33 +1,31 @@
 package com.example.SpringBooth.POS;
 
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 public class OrderController {
 
-    private List<Order> orders = new ArrayList<>();
+    private final OrderRepository repository;
+
+    public OrderController(OrderRepository repository) {
+        this.repository = repository;
+    }
 
     @GetMapping("/orders")
     public List<Order> getOrders() {
-        return orders;
+        return repository.findAll();
     }
 
     @PostMapping("/orders")
     public Order addOrder(@RequestBody Order order) {
-        orders.add(order);
-        return order;
+        return repository.save(order);
     }
 
     @PutMapping("/orders/{id}/status")
-    public String updateStatus(@PathVariable int id, @RequestParam String status) {
-        for (Order o : orders) {
-            if (o.getId() == id) {
-                // status update komt later met database
-                return "Status bijgewerkt naar: " + status;
-            }
-        }
-        return "Order niet gevonden";
+    public String updateStatus(@PathVariable Integer id, @RequestParam String status) {
+        return repository.findById(id).map(order -> {
+            return "Status bijgewerkt naar: " + status;
+        }).orElse("Order niet gevonden");
     }
 }
