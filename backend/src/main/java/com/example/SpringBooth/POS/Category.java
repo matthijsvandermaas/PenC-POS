@@ -1,16 +1,25 @@
 package com.example.SpringBooth.POS;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "categories")
 public class Category {
 
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
     private String name;
 
-    public Category(int id, String name) {
+    public Category() {
+    }
+
+    public Category(Integer id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
