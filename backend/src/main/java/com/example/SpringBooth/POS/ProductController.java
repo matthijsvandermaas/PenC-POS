@@ -1,31 +1,30 @@
 package com.example.SpringBooth.POS;
 
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 public class ProductController {
 
-	private List<Product> products = new ArrayList<>(List.of(
-			new Product(1, "Pizza", 8.50, "Eten"),
-			new Product(2, "Cola", 2.50, "Drinken"),
-			new Product(3, "Bier", 3.00, "Drinken")));
+	private final ProductRepository repository;
+
+	public ProductController(ProductRepository repository) {
+		this.repository = repository;
+	}
 
 	@GetMapping("/products")
 	public List<Product> getProducts() {
-		return products;
+		return repository.findAll();
 	}
 
 	@PostMapping("/products")
 	public Product addProduct(@RequestBody Product product) {
-		products.add(product);
-		return product;
+		return repository.save(product);
 	}
 
 	@DeleteMapping("/products/{id}")
-	public String deleteProduct(@PathVariable int id) {
-		products.removeIf(p -> p.getId() == id);
+	public String deleteProduct(@PathVariable Integer id) {
+		repository.deleteById(id);
 		return "Product verwijderd";
 	}
 }
