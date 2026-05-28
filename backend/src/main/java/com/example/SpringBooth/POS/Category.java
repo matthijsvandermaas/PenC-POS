@@ -10,13 +10,15 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String name;
+    private String destination;
 
     public Category() {
     }
 
-    public Category(Integer id, String name) {
+    public Category(Integer id, String name, String destination) {
         this.id = id;
         this.name = name;
+        this.destination = destination;
     }
 
     public Integer getId() {
@@ -25,5 +27,9 @@ public class Category {
 
     public String getName() {
         return name;
+    }
+
+    public String getDestination() {
+        return destination;
     }
 }
