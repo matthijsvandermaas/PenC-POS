@@ -5,6 +5,7 @@ function App() {
   const [products, setProducts] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
   const [order, setOrder] = useState([])
+  const [showPayment, setShowPayment] = useState(false)
 
   useEffect(() => {
     fetch('http://localhost:8081/categories')
@@ -30,13 +31,32 @@ function App() {
 
   const total = order.reduce((sum, i) => sum + i.price * i.qty, 0)
 
+  const placeOrder = () => {
+    if (order.length === 0) return
+    const orderData = {
+      items: order.map(item => ({ productId: item.id, quantity: item.qty })),
+      total: total,
+      status: 'open'
+    }
+    fetch('http://localhost:8081/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    })
+      .then(res => res.json())
+      .then(() => alert('Bestelling naar keuken/bar gestuurd!'))
+  }
+
+  const checkout = (method) => {
+    setOrder([])
+    setShowPayment(false)
+    alert(`Betaald met ${method}!`)
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
-      
-      {/* Links: categorieën + producten */}
+
       <div style={{ flex: 1, padding: '16px' }}>
-        
-        {/* Categorietabbladen */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
           {categories.map(cat => (
             <button
@@ -57,7 +77,6 @@ function App() {
           ))}
         </div>
 
-        {/* Productknoppen */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
           {filteredProducts.map(product => (
             <button
@@ -69,10 +88,9 @@ function App() {
                 border: '1px solid #555',
                 cursor: 'pointer',
                 background: '#2a2a2a',
+                color: 'white',
                 fontSize: '15px',
-                fontWeight: 'bold',
-                fontcolor: 'white',
-
+                fontWeight: 'bold'
               }}
             >
               {product.name}<br />
@@ -82,7 +100,6 @@ function App() {
         </div>
       </div>
 
-      {/* Rechts: rekening */}
       <div style={{ width: '280px', background: '#f5f5f5', padding: '16px', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ marginTop: 0 }}>Rekening</h2>
         <div style={{ flex: 1 }}>
@@ -99,9 +116,40 @@ function App() {
           <span>Totaal</span>
           <span>€{total.toFixed(2)}</span>
         </div>
-        <button style={{ marginTop: '16px', padding: '12px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+        <button
+          onClick={placeOrder}
+          style={{ marginTop: '16px', padding: '12px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
           Bestelling plaatsen
         </button>
+        <button
+          onClick={() => setShowPayment(true)}
+          style={{ marginTop: '8px', padding: '12px', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', width: '100%' }}>
+          Afrekenen
+        </button>
+
+        {showPayment && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', padding: '32px', borderRadius: '16px', textAlign: 'center', width: '300px' }}>
+              <h2 style={{ marginBottom: '8px' }}>Afrekenen</h2>
+              <p style={{ marginBottom: '24px', fontSize: '24px', fontWeight: 'bold' }}>€{total.toFixed(2)}</p>
+              <button
+                onClick={() => checkout('pin')}
+                style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+                💳 Pin
+              </button>
+              <button
+                onClick={() => checkout('contant')}
+                style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+                💵 Contant
+              </button>
+              <button
+                onClick={() => setShowPayment(false)}
+                style={{ width: '100%', padding: '12px', background: '#ccc', color: 'black', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+                Annuleren
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
