@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react'
 
 function App() {
+  const [screen, setScreen] = useState('tables')
+  const [tables, setTables] = useState([])
+  const [selectedTable, setSelectedTable] = useState(null)
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
-  const [order, setOrder] = useState([])
+  const [tableOrders, setTableOrders] = useState({})
   const [showPayment, setShowPayment] = useState(false)
 
+  const order = tableOrders[selectedTable?.id] || []
+
   useEffect(() => {
+    fetch('http://localhost:8081/tables')
+      .then(res => res.json())
+      .then(data => setTables(data))
     fetch('http://localhost:8081/categories')
       .then(res => res.json())
       .then(data => {
@@ -19,13 +27,22 @@ function App() {
       .then(data => setProducts(data))
   }, [])
 
+  const selectTable = (table) => {
+    setSelectedTable(table)
+    setScreen('kassa')
+  }
+
   const filteredProducts = products.filter(p => p.category === categories.find(c => c.id === activeCategory)?.name)
 
   const addToOrder = (product) => {
-    setOrder(prev => {
-      const existing = prev.find(i => i.id === product.id)
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { ...product, qty: 1 }]
+    setTableOrders(prev => {
+      const tableId = selectedTable.id
+      const current = prev[tableId] || []
+      const existing = current.find(i => i.id === product.id)
+      const updated = existing
+        ? current.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+        : [...current, { ...product, qty: 1 }]
+      return { ...prev, [tableId]: updated }
     })
   }
 
@@ -36,7 +53,8 @@ function App() {
     const orderData = {
       items: order.map(item => ({ productId: item.id, quantity: item.qty })),
       total: total,
-      status: 'open'
+      status: 'open',
+      tableNumber: selectedTable.number
     }
     fetch('http://localhost:8081/orders', {
       method: 'POST',
@@ -48,15 +66,57 @@ function App() {
   }
 
   const checkout = (method) => {
-    setOrder([])
+    fetch(`http://localhost:8081/tables/${selectedTable.id}/status?status=vrij`, { method: 'PUT' })
+    setTableOrders(prev => {
+      const updated = { ...prev }
+      delete updated[selectedTable.id]
+      return updated
+    })
     setShowPayment(false)
+    setScreen('tables')
+    setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'vrij' } : t))
     alert(`Betaald met ${method}!`)
+  }
+
+  if (screen === 'tables') {
+    return (
+      <div style={{ padding: '32px', fontFamily: 'sans-serif' }}>
+        <h1 style={{ marginBottom: '24px' }}>Tafeloverzicht</h1>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {tables.map(table => (
+            <button
+              key={table.id}
+              onClick={() => selectTable(table)}
+              style={{
+                padding: '32px',
+                borderRadius: '16px',
+                border: '2px solid',
+                borderColor: table.status === 'vrij' ? '#28a745' : '#dc3545',
+                cursor: 'pointer',
+                background: table.status === 'vrij' ? '#d4edda' : '#f8d7da',
+                fontSize: '20px',
+                fontWeight: 'bold'
+              }}
+            >
+              Tafel {table.number}<br />
+              <span style={{ fontSize: '14px', fontWeight: 'normal' }}>{table.status}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
-
       <div style={{ flex: 1, padding: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+          <button onClick={() => setScreen('tables')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#e0e0e0' }}>
+            ← Tafels
+          </button>
+          <h2 style={{ margin: 0 }}>Tafel {selectedTable?.number}</h2>
+        </div>
+
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
           {categories.map(cat => (
             <button
@@ -132,19 +192,13 @@ function App() {
             <div style={{ background: 'white', padding: '32px', borderRadius: '16px', textAlign: 'center', width: '300px' }}>
               <h2 style={{ marginBottom: '8px' }}>Afrekenen</h2>
               <p style={{ marginBottom: '24px', fontSize: '24px', fontWeight: 'bold' }}>€{total.toFixed(2)}</p>
-              <button
-                onClick={() => checkout('pin')}
-                style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+              <button onClick={() => checkout('pin')} style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
                 💳 Pin
               </button>
-              <button
-                onClick={() => checkout('contant')}
-                style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+              <button onClick={() => checkout('contant')} style={{ width: '100%', padding: '12px', marginBottom: '8px', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
                 💵 Contant
               </button>
-              <button
-                onClick={() => setShowPayment(false)}
-                style={{ width: '100%', padding: '12px', background: '#ccc', color: 'black', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
+              <button onClick={() => setShowPayment(false)} style={{ width: '100%', padding: '12px', background: '#ccc', color: 'black', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>
                 Annuleren
               </button>
             </div>

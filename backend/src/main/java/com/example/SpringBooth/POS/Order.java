@@ -16,15 +16,17 @@ public class Order {
 
     private double total;
     private String status;
+    private Integer tableNumber;
 
     public Order() {
     }
 
-    public Order(Integer id, List<OrderItem> items, double total, String status) {
+    public Order(Integer id, List<OrderItem> items, double total, String status, Integer tableNumber) {
         this.id = id;
         this.items = items;
         this.total = total;
         this.status = status;
+        this.tableNumber = tableNumber;
     }
 
     public Integer getId() {
@@ -41,5 +43,13 @@ public class Order {
 
     public String getStatus() {
         return status;
+    }
+
+    public Integer getTableNumber() {
+        return tableNumber;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
