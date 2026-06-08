@@ -35,16 +35,20 @@ function App() {
   const filteredProducts = products.filter(p => p.category === categories.find(c => c.id === activeCategory)?.name)
 
   const addToOrder = (product) => {
-    setTableOrders(prev => {
-      const tableId = selectedTable.id
-      const current = prev[tableId] || []
-      const existing = current.find(i => i.id === product.id)
-      const updated = existing
-        ? current.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-        : [...current, { ...product, qty: 1 }]
-      return { ...prev, [tableId]: updated }
-    })
-  }
+  setTableOrders(prev => {
+    const tableId = selectedTable.id
+    const current = prev[tableId] || []
+    const existing = current.find(i => i.id === product.id)
+    const updated = existing
+      ? current.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+      : [...current, { ...product, qty: 1 }]
+    return { ...prev, [tableId]: updated }
+  })
+
+  // Tafel op bezet zetten
+  fetch(`http://localhost:8081/tables/${selectedTable.id}/status?status=bezet`, { method: 'PUT' })
+  setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'bezet' } : t))
+}
 
   const total = order.reduce((sum, i) => sum + i.price * i.qty, 0)
 
